@@ -34,7 +34,7 @@ _CN.MOFNetStack.corr_levels = 4
 _CN.MOFNetStack.mixed_precision = True
 _CN.MOFNetStack.context_3D = False
 
-_CN.MOFNetStack.decoder_depth = 32
+_CN.MOFNetStack.decoder_depth = 16
 _CN.MOFNetStack.critical_params = ["cnet", "fnet", "pretrain", 'corr_fn', "Tfusion", "corr_levels", "decoder_depth", "mixed_precision"]
 
 ### TRAINER
