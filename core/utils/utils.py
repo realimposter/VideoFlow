@@ -7,6 +7,7 @@ from scipy import interpolate
 class InputPadder:
     """ Pads images such that dimensions are divisible by 8 """
     def __init__(self, dims, mode='sintel'):
+        print("initializing input padder")
         self.ht, self.wd = dims[-2:]
         pad_ht = (((self.ht // 8) + 1) * 8 - self.ht) % 8
         pad_wd = (((self.wd // 8) + 1) * 8 - self.wd) % 8
@@ -19,11 +20,11 @@ class InputPadder:
             self._pad = [pad_wd//2, pad_wd - pad_wd//2, 0, pad_ht, 0, 0]
 
     def pad(self, input):
+        print("Input shape:", input.shape)
+        print("Padding values:", self._pad)
         if self.mode == "downzero":
             return F.pad(input, self._pad)
         else:
-            print("Input shape:", input.shape)
-            print("Padding values:", self._pad)
             return F.pad(input, self._pad, mode='replicate')
 
     def unpad(self,x):
