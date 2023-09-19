@@ -16,7 +16,7 @@ from core.Networks import build_network
 
 from utils import frame_utils
 # from utils.utils import InputPadder, forward_interpolate
-from VideoFlow.utils.utils import InputPadder, forward_interpolate
+from VideoFlow.core.utils.utils import InputPadder, forward_interpolate
 
 import itertools
 import imageio
