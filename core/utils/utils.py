@@ -22,6 +22,8 @@ class InputPadder:
         if self.mode == "downzero":
             return F.pad(input, self._pad)
         else:
+            print("Input shape:", input.shape)
+            print("Padding values:", self._pad)
             return F.pad(input, self._pad, mode='replicate')
 
     def unpad(self,x):
