@@ -15,9 +15,7 @@ from utils import flow_viz
 from core.Networks import build_network
 
 from utils import frame_utils
-# from utils.utils import InputPadder, forward_interpolate
-from VideoFlow.core.utils.utils import InputPadder, forward_interpolate
-
+from utils.utils import InputPadder, forward_interpolate
 import itertools
 import imageio
 
@@ -56,17 +54,83 @@ def vis_pre(flow_pre, vis_dir):
 
 @torch.no_grad()
 def MOF_inference(model, cfg):
-
+    start = time.time()
     model.eval()
 
-    input_images = prepare_image(cfg.seq_dir)
-    input_images = input_images[None].cuda()
-    padder = InputPadder(input_images.shape)
-    input_images = padder.pad(input_images)
-    flow_pre, _ = model(input_images, {})
-    flow_pre = padder.unpad(flow_pre[0]).cpu()
+    image_list = sorted(os.listdir(cfg.seq_dir))
+    
+    # loop through each batch in the sequence
+    batch_size = 5
+    for i in range(0, len(image_list), batch_size):
+        images = []
+        start_frame = i
+        end_frame = min(i+batch_size, len(image_list))
+        print(f"start frame: {start_frame}, end frame: {end_frame}")
+        batch_image_list = image_list[start_frame:end_frame]
 
-    return flow_pre
+        for fn in batch_image_list:
+            img = Image.open(os.path.join(cfg.seq_dir, fn))
+            img = np.array(img).astype(np.uint8)[..., :3]
+            img = torch.from_numpy(img).permute(2, 0, 1).float()
+            images.append(img)
+        
+        input_images = torch.stack(images)
+
+
+        input_images = input_images[None].cuda()
+        padder = InputPadder(input_images.shape)
+        input_images = padder.pad(input_images)
+        flow_pre, _ = model(input_images, {})
+        flow_pre = padder.unpad(flow_pre[0]).cpu()
+        
+
+    
+        ######### SAVE FLOWS ############
+        N = flow_pre.shape[0]
+
+        # forwards flows (first half of the flow_pre array)
+        for idx in range(N//2):
+            # get frame number
+            frame_num = idx+2
+            #convert flow up to numpy array
+            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).squeeze(0)
+            # Save flow
+            flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
+            flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
+            flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
+            output_path = cfg.output_forward_path.replace("0", str(frame_num))
+            if cfg.compress:
+                np.savez_compressed(output_path, flow)
+            else: 
+                np.save(output_path, flow)
+
+            if cfg.debug:
+                viz_path = cfg.output_forward_path.replace("0", str(frame_num)).replace(".npy", ".png")
+                flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
+                image = Image.fromarray(flow_img)
+                
+        # backwards flows (second half of the flow_pre array)
+        for idx in range(N//2, N):
+            frame_num = idx-N//2+1
+            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).squeeze(0)
+            # Save flow
+            flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
+            flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
+            flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
+            output_path = cfg.output_backward_path.replace("0", str(frame_num))
+            if cfg.compress:
+                np.savez_compressed(output_path, flow)
+            else:
+                np.save(output_path, flow)
+            if cfg.debug:
+                viz_path = cfg.output_backward_path.replace("0", str(frame_num)).replace(".npy", ".png")
+                flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
+                image = Image.fromarray(flow_img)
+                image.save(viz_path)
+                
+    print(f"MOF inference time: {time.time()-start}")
+    print("seconds per image: {}".format((time.time()-start)/len(input_images)))
+            
 
 @torch.no_grad()
 def BOF_inference(model, cfg):
