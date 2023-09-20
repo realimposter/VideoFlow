@@ -86,6 +86,7 @@ def MOF_inference(model, cfg):
 
     
         ######### SAVE FLOWS ############
+        print("flow_pre shape:", flow_pre.shape)
         N = flow_pre.shape[0]
 
         # forwards flows (first half of the flow_pre array)
