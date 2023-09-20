@@ -93,6 +93,7 @@ def MOF_inference(model, cfg):
             # get frame number
             frame_num = idx+2
             #convert flow up to numpy array
+            print(flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).shape)
             flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).squeeze(0)
             # Save flow
             flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
