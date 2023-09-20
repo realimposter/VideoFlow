@@ -95,7 +95,7 @@ def MOF_inference(model, cfg):
             frame_num = idx+2
             #convert flow up to numpy array
             print(flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).shape)
-            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).squeeze(0)
+            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16)
             # Save flow
             flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
             flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
@@ -114,7 +114,7 @@ def MOF_inference(model, cfg):
         # backwards flows (second half of the flow_pre array)
         for idx in range(N//2, N):
             frame_num = idx-N//2+1
-            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).squeeze(0)
+            flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16)
             # Save flow
             flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
             flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
