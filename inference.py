@@ -100,14 +100,14 @@ def MOF_inference(model, cfg):
             flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
             flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
             flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
-            output_path = cfg.output_forward_path.replace("0", str(frame_num))
+            output_path = cfg.output_forward_path.replace("00000", str(frame_num))
             if cfg.compress:
                 np.savez_compressed(output_path, flow)
             else: 
                 np.save(output_path, flow)
 
             if cfg.debug:
-                viz_path = cfg.output_forward_path.replace("0", str(frame_num)).replace(".npy", ".png")
+                viz_path = cfg.output_forward_path.replace("00000", str(frame_num)).replace(".npy", ".png")
                 flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
                 image = Image.fromarray(flow_img)
                 
@@ -119,13 +119,13 @@ def MOF_inference(model, cfg):
             flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
             flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
             flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
-            output_path = cfg.output_backward_path.replace("0", str(frame_num))
+            output_path = cfg.output_backward_path.replace("00000", str(frame_num))
             if cfg.compress:
                 np.savez_compressed(output_path, flow)
             else:
                 np.save(output_path, flow)
             if cfg.debug:
-                viz_path = cfg.output_backward_path.replace("0", str(frame_num)).replace(".npy", ".png")
+                viz_path = cfg.output_backward_path.replace("00000", str(frame_num)).replace(".npy", ".png")
                 flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
                 image = Image.fromarray(flow_img)
                 image.save(viz_path)
