@@ -59,17 +59,16 @@ def MOF_inference(model, cfg):
 
     image_list = sorted(os.listdir(cfg.seq_dir))
 
-    # Prepend the first frame to image_list for calculating optical flow from frame 1-2.
-    image_list = [image_list[0]] + image_list
-    
-    # loop through each batch in the sequence
+    # Padding: Prepend the first frame and Append the last frame to image_list
+    image_list = [image_list[0]] + image_list + [image_list[-1]]
+
     batch_size = 5
-    for i in range(2, len(image_list), batch_size-2):
+    for i in range(0, len(image_list) - batch_size + 2, batch_size-2):
         print("starting flow batch "+str(i))
         images = []
 
-        start_frame = i-2
-        end_frame = min(i+batch_size-2, len(image_list))
+        start_frame = i
+        end_frame = min(i+batch_size, len(image_list))
         batch_image_list = image_list[start_frame:end_frame]
         print(f"start frame: {start_frame}, end frame: {end_frame}")
 
@@ -80,33 +79,23 @@ def MOF_inference(model, cfg):
             images.append(img)
         
         input_images = torch.stack(images)
-
-
         input_images = input_images[None].cuda()
         padder = InputPadder(input_images.shape)
         input_images = padder.pad(input_images)
         flow_pre, _ = model(input_images, {})
         flow_pre = padder.unpad(flow_pre[0]).cpu()
         
-        skip_backwards = False
-        if i == 0:
-            skip_backwards = True
-    
         ######### SAVE FLOWS ############
         print("flow_pre shape:", flow_pre.shape)
         N = flow_pre.shape[0]
 
-        # forwards flows (first half of the flow_pre array)
+        # forwards flows
         for idx in range(N//2):
-            # get frame number
-            frame_num = idx+2
-            #convert flow up to numpy array
-            print(flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16).shape)
+            frame_num = idx + i + 1
             flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16)
-            # Save flow
-            flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
-            flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
-            flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
+            flow = np.zeros((flow_export.shape[0], flow_export.shape[1], 3))
+            flow[:, :, 0] = flow_export[:, :, 0]
+            flow[:, :, 1] = flow_export[:, :, 1]
             output_path = cfg.output_forward_path.replace("00000", str(frame_num).zfill(5))
             if cfg.compress:
                 np.savez_compressed(output_path, flow)
@@ -114,32 +103,27 @@ def MOF_inference(model, cfg):
                 np.save(output_path, flow)
 
             if cfg.debug:
-                viz_path = cfg.output_forward_path.replace("00000", str(frame_num).zfill(5)).replace(".npy", ".png")
-                flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
-                image = Image.fromarray(flow_img)
-                
-        # backwards flows (second half of the flow_pre array)
+                viz_path = output_path.replace(".npy", ".png")
+                flow_img = flow_viz.flow_to_image(flow_export)
+                Image.fromarray(flow_img).save(viz_path)
+
+        # backwards flows
         for idx in range(N//2, N):
-            # dont save first backwards flow
-            if skip_backwards:
-                skip_backwards = False
-                continue
-            frame_num = idx-N//2+1
+            frame_num = idx - N//2 + i
             flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16)
-            # Save flow
-            flow = np.zeros((flow_export.shape[1], flow_export.shape[2], 3))
-            flow[:, :, 0] = flow_export[0, :, :]  # X displacement in Blue (red)
-            flow[:, :, 1] = flow_export[1, :, :]  # Y displacement in Green
+            flow = np.zeros((flow_export.shape[0], flow_export.shape[1], 3))
+            flow[:, :, 0] = flow_export[:, :, 0]
+            flow[:, :, 1] = flow_export[:, :, 1]
             output_path = cfg.output_backward_path.replace("00000", str(frame_num).zfill(5))
             if cfg.compress:
                 np.savez_compressed(output_path, flow)
             else:
                 np.save(output_path, flow)
+            
             if cfg.debug:
-                viz_path = cfg.output_backward_path.replace("00000", str(frame_num).zfill(5)).replace(".npy", ".png")
-                flow_img = flow_viz.flow_to_image(flow_pre[idx].permute(1, 2, 0).numpy())
-                image = Image.fromarray(flow_img)
-                image.save(viz_path)
+                viz_path = output_path.replace(".npy", ".png")
+                flow_img = flow_viz.flow_to_image(flow_export)
+                Image.fromarray(flow_img).save(viz_path)
                 
     print(f"MOF inference time: {time.time()-start}")
     print("seconds per image: {}".format((time.time()-start)/len(input_images)))
