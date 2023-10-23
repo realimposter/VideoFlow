@@ -64,13 +64,14 @@ def MOF_inference(model, cfg):
     
     # loop through each batch in the sequence
     batch_size = 5
-    for i in range(0, len(image_list), batch_size):
+    for i in range(2, len(image_list), batch_size-2):
         print("starting flow batch "+str(i))
         images = []
-        start_frame = i
-        end_frame = min(i+batch_size, len(image_list))
-        print(f"start frame: {start_frame}, end frame: {end_frame}")
+
+        start_frame = i-2
+        end_frame = min(i+batch_size-2, len(image_list))
         batch_image_list = image_list[start_frame:end_frame]
+        print(f"start frame: {start_frame}, end frame: {end_frame}")
 
         for fn in batch_image_list:
             img = Image.open(os.path.join(cfg.seq_dir, fn))
