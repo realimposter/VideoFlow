@@ -60,10 +60,10 @@ def MOF_inference(model, cfg):
     image_list = sorted(os.listdir(cfg.seq_dir))
 
     # Padding: Prepend the first frame and Append the last frame to image_list
-    image_list = [image_list[0]] + image_list + [image_list[-1]]
+    image_list = [image_list[0]] + image_list + [image_list[-1]] + [image_list[-1]]
 
     batch_size = 5
-    for i in range(0, len(image_list) - batch_size + 2, batch_size-2):
+    for i in range(0, len(image_list) - (batch_size - 2), batch_size-2):
         print("starting flow batch "+str(i))
         images = []
 
