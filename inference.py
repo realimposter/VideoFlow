@@ -58,10 +58,14 @@ def MOF_inference(model, cfg):
     model.eval()
 
     image_list = sorted(os.listdir(cfg.seq_dir))
+
+    # Prepend the first frame to image_list for calculating optical flow from frame 1-2.
+    image_list = [image_list[0]] + image_list
     
     # loop through each batch in the sequence
     batch_size = 5
-    for i in range(0, len(image_list), batch_size):
+    for i in range(0, len(image_list), batch_size):'
+        print("starting flow batch "+str(i))
         images = []
         start_frame = i
         end_frame = min(i+batch_size, len(image_list))
@@ -83,7 +87,9 @@ def MOF_inference(model, cfg):
         flow_pre, _ = model(input_images, {})
         flow_pre = padder.unpad(flow_pre[0]).cpu()
         
-
+        skip_backwards = False
+        if i == 0:
+            skip_backwards = True
     
         ######### SAVE FLOWS ############
         print("flow_pre shape:", flow_pre.shape)
@@ -113,6 +119,10 @@ def MOF_inference(model, cfg):
                 
         # backwards flows (second half of the flow_pre array)
         for idx in range(N//2, N):
+            # dont save first backwards flow
+            if skip_backwards:
+                skip_backwards = False
+                continue
             frame_num = idx-N//2+1
             flow_export = flow_pre[idx].permute(1, 2, 0).numpy().astype(np.float16)
             # Save flow
