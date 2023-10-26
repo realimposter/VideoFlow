@@ -20,8 +20,8 @@ import itertools
 import imageio
 
 def prepare_image(seq_dir):
-    print(f"preparing image...")
-    print(f"Input image sequence dir = {seq_dir}")
+    # print(f"preparing image...")
+    # print(f"Input image sequence dir = {seq_dir}")
 
     images = []
 
@@ -64,7 +64,7 @@ def MOF_inference(model, cfg):
 
     batch_size = 5
     for i in range(0, len(image_list) - (batch_size - 2), batch_size-2):
-        print("starting flow batch "+str(i))
+        # print("starting flow batch "+str(i))
         images = []
 
         start_frame = i
@@ -86,7 +86,7 @@ def MOF_inference(model, cfg):
         flow_pre = padder.unpad(flow_pre[0]).cpu()
         
         ######### SAVE FLOWS ############
-        print("flow_pre shape:", flow_pre.shape)
+        # print("flow_pre shape:", flow_pre.shape)
         N = flow_pre.shape[0]
 
         # forwards flows
@@ -126,8 +126,6 @@ def MOF_inference(model, cfg):
                 Image.fromarray(flow_img).save(viz_path)
                 
     print(f"MOF inference time: {time.time()-start}")
-    print("seconds per image: {}".format((time.time()-start)/len(input_images)))
-            
 
 @torch.no_grad()
 def BOF_inference(model, cfg):
@@ -168,8 +166,8 @@ if __name__ == '__main__':
     model.cuda()
     model.eval()
 
-    print(cfg.model)
-    print("Parameter Count: %d" % count_parameters(model))
+    # print(cfg.model)
+    # print("Parameter Count: %d" % count_parameters(model))
     
     with torch.no_grad():
         if args.mode == 'MOF':
